@@ -32,7 +32,18 @@ export class RestAPIStack extends cdk.Stack {
             indexName: "roleIx",
             sortKey: {name: "roleName", type: dynamodb.AttributeType.STRING},
         });
+        const movieReviewsTable = new dynamodb.Table(this, 'MovieReviewsTable', {
+            partitionKey: {name: 'MovieId', type: dynamodb.AttributeType.NUMBER},
+            sortKey: {name: 'ReviewDate', type: dynamodb.AttributeType.STRING},
+            tableName: 'MovieReviews',
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
 
+        movieReviewsTable.addGlobalSecondaryIndex({
+            indexName: 'ReviewerNameIndex',
+            partitionKey: {name: 'ReviewerName', type: dynamodb.AttributeType.STRING},
+        });
         // Functions
         const getMovieByIdFn = new lambdanode.NodejsFunction(
             this,
@@ -45,7 +56,7 @@ export class RestAPIStack extends cdk.Stack {
                 memorySize: 128,
                 environment: {
                     TABLE_NAME: moviesTable.tableName,
-                    MOVIE_CAST_TABLE:movieCastsTable.tableName,
+                    MOVIE_CAST_TABLE: movieCastsTable.tableName,
                     REGION: 'eu-west-1',
                 },
             }
@@ -165,7 +176,7 @@ export class RestAPIStack extends cdk.Stack {
         const movieCastEndpoint = moviesEndpoint.addResource("cast");
         movieCastEndpoint.addMethod(
             "GET",
-            new apig.LambdaIntegration(getMovieCastMembersFn, { proxy: true })
+            new apig.LambdaIntegration(getMovieCastMembersFn, {proxy: true})
         );
     }
 }
