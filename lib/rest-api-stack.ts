@@ -43,7 +43,10 @@ export class RestAPIStack extends cdk.Stack {
         movieReviewsTable.addGlobalSecondaryIndex({
             indexName: 'ReviewerNameIndex',
             partitionKey: {name: 'ReviewerName', type: dynamodb.AttributeType.STRING},
+            sortKey: {name: 'MovieId', type: dynamodb.AttributeType.NUMBER},
+            projectionType: dynamodb.ProjectionType.ALL,
         });
+
         // Functions
         const getMovieReviewsByIdFn = new lambdanode.NodejsFunction(
             this,
@@ -212,6 +215,11 @@ export class RestAPIStack extends cdk.Stack {
             "GET",
             new apig.LambdaIntegration(getMovieReviewsByIdFn, {proxy: true})
         );
+        const reviewerEndpoint = movieReviewsEndpoint.addResource("{reviewerName}")
+        reviewerEndpoint.addMethod(
+            "GET",
+            new apig.LambdaIntegration(getMovieReviewsByIdFn, {proxy: true})
+        )
         const reviewsEndpoint = moviesEndpoint.addResource("reviews");
         reviewsEndpoint.addMethod(
             "POST",

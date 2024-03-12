@@ -8,6 +8,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     try {
         console.log("Event: ", event);
         const movieId = event.pathParameters?.movieId;
+        const minRating = event.queryStringParameters?.minRating;
+        const reviewerName = event.pathParameters?.reviewerName;
 
         if (!movieId) {
             return {
@@ -19,15 +21,27 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             };
         }
 
-        const commandOutput = await ddbDocClient.send(
-            new QueryCommand({
-                TableName: process.env.TABLE_NAME,
-                KeyConditionExpression: "MovieId = :movieId",
-                ExpressionAttributeValues: {
-                    ":movieId": parseInt(movieId),
-                },
-            })
-        );
+        let queryInput = {
+            TableName: process.env.TABLE_NAME,
+            KeyConditionExpression: "MovieId = :movieId",
+            ExpressionAttributeValues: {
+                ":movieId": parseInt(movieId),
+            },
+        };
+
+        if (minRating) {
+            queryInput.FilterExpression = "Rating > :minRating";
+            queryInput.ExpressionAttributeValues[":minRating"] = parseInt(minRating);
+        }
+
+        if (reviewerName) {
+            queryInput.IndexName = "ReviewerNameIndex";
+            queryInput.KeyConditionExpression = "ReviewerName = :reviewerName and MovieId = :movieId";
+            queryInput.ExpressionAttributeValues[":reviewerName"] = reviewerName;
+        }
+
+        const commandOutput = await ddbDocClient.send(new QueryCommand(queryInput));
+
 
         if (!commandOutput.Items || commandOutput.Items.length === 0) {
             return {
