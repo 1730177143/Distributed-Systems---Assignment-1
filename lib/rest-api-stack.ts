@@ -48,6 +48,22 @@ export class RestAPIStack extends cdk.Stack {
         });
 
         // Functions
+        const getMovieReviewsByNameFn = new lambdanode.NodejsFunction(
+            this,
+            "GetMovieReviewsByNameFn",
+            {
+                architecture: lambda.Architecture.ARM_64,
+                runtime: lambda.Runtime.NODEJS_18_X,
+                entry: `${__dirname}/../lambdas/getMovieReviewsByName.ts`,
+                timeout: cdk.Duration.seconds(10),
+                memorySize: 128,
+                environment: {
+                    TABLE_NAME: movieReviewsTable.tableName,
+                    REGION: 'eu-west-1',
+                },
+            }
+        );
+
         const getMovieReviewsByIdFn = new lambdanode.NodejsFunction(
             this,
             "GetMovieReviewsByIdFn",
@@ -183,6 +199,7 @@ export class RestAPIStack extends cdk.Stack {
         movieReviewsTable.grantReadData(getMovieReviewsByIdFn);
         movieReviewsTable.grantReadWriteData(newMovieReviewFn);
         movieReviewsTable.grantReadWriteData(updateReviewFn);
+        movieReviewsTable.grantReadData(getMovieReviewsByNameFn);
         // REST API
         const api = new apig.RestApi(this, "RestAPI", {
             description: "demo api",
@@ -235,10 +252,16 @@ export class RestAPIStack extends cdk.Stack {
         parameterEndpoint.addMethod(
             "PUT",
             new apig.LambdaIntegration(updateReviewFn, {proxy: true}))
-        const reviewsEndpoint = moviesEndpoint.addResource("reviews");
-        reviewsEndpoint.addMethod(
+        const reviewEndpoint = moviesEndpoint.addResource("reviews");
+        reviewEndpoint.addMethod(
             "POST",
             new apig.LambdaIntegration(newMovieReviewFn, {proxy: true})
+        );
+        const reviewsEndpoint = api.root.addResource("reviews");
+        const reviewerNameEndpoint = reviewsEndpoint.addResource("{reviewerName}");
+        reviewerNameEndpoint.addMethod(
+            "GET",
+            new apig.LambdaIntegration(getMovieReviewsByNameFn, {proxy: true})
         );
     }
 }
