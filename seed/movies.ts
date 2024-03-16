@@ -80,9 +80,9 @@ export const movieReviews: MovieReview[] = [
     {
         MovieId: 1234,
         ReviewerName: 'Bloggs',
-        ReviewDate: '2024-03-01',
+        ReviewDate: '2023-03-01',
         Content: 'Review 1',
-        Rating: 5,
+        Rating: 1,
     },
     {
         MovieId: 2234,
@@ -97,5 +97,12 @@ export const movieReviews: MovieReview[] = [
         ReviewDate: '2024-03-03',
         Content: 'Review 3',
         Rating: 5,
+    },
+    {
+        MovieId: 6234,
+        ReviewerName: 'Bloggs',
+        ReviewDate: '2024-03-09',
+        Content: 'Review 4',
+        Rating: 4,
     }
 ];
